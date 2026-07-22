@@ -185,13 +185,27 @@ def validar_colunas(header_row, mapping):
 def insert_base(data_df, mapping, arquivo_origem, periodo, batch_size=1000, progress_cb=None):
     """data_df: DataFrame lido com header=None (colunas 0..N-1 posicionais,
     sem a linha de cabeçalho). Acessa cada valor por posição (m['idx']),
-    nunca por nome de coluna -- evita o bug de cabeçalhos duplicados."""
+    nunca por nome de coluna -- evita o bug de cabeçalhos duplicados.
+
+    Faz UPSERT por numero_do_waybill: se o pedido ja existe na base (outra
+    carga, ou reenvio do mesmo arquivo), atualiza a linha em vez de duplicar.
+    O trigger recalcula as colunas auxiliares nos dois casos (INSERT e
+    UPDATE), entao nunca fica dado calculado desatualizado."""
     slugs = [m["slug"] for m in mapping]
     idxs = [m["idx"] for m in mapping]
     cols_sql = ["arquivo_origem", "periodo_referencia", "row_num"] + slugs
-    insert_sql = "INSERT INTO public.base (" + ", ".join(cols_sql) + ") VALUES %s"
+    set_clause = ", ".join(f"{c} = EXCLUDED.{c}" for c in cols_sql if c != "numero_do_waybill")
+    set_clause += ", data_importacao = now()"
+    insert_sql = (
+        "INSERT INTO public.base (" + ", ".join(cols_sql) + ") VALUES %s "
+        "ON CONFLICT (numero_do_waybill) DO UPDATE SET " + set_clause
+    )
 
     conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM public.base")
+        antes = cur.fetchone()[0]
+
     total = 0
     n = len(data_df)
     with conn.cursor() as cur:
@@ -206,7 +220,14 @@ def insert_base(data_df, mapping, arquivo_origem, periodo, batch_size=1000, prog
             total += len(rows)
             if progress_cb:
                 progress_cb(total / n)
-    return total
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM public.base")
+        depois = cur.fetchone()[0]
+
+    novos = depois - antes
+    atualizados = total - novos
+    return total, novos, atualizados
 
 
 def upsert_supervisor(ponto, supervisor):
@@ -452,6 +473,12 @@ def render_upload():
         "monitoramento_da_pontualidade_de_pedido). O banco calcula "
         "sozinho week, leed time, hub e supervisor assim que a linha entra."
     )
+    st.caption(
+        "🔒 Protegido contra duplicidade: se um pedido (waybill) já existir na base "
+        "— de um período que se sobrepõe, ou reenvio do mesmo arquivo — a linha é "
+        "**atualizada**, não duplicada. Pode subir tranquilo mesmo sem ter certeza "
+        "se aquele arquivo já foi enviado antes."
+    )
 
     uploaded = st.file_uploader("Arquivo .xlsx", type=["xlsx"])
 
@@ -508,9 +535,12 @@ def render_upload():
             def _cb(frac):
                 progress.progress(min(frac, 1.0), text=f"Enviando... {frac:.0%}")
 
-            n = insert_base(data_df, mapping, uploaded.name, periodo, progress_cb=_cb)
+            n, novos, atualizados = insert_base(data_df, mapping, uploaded.name, periodo, progress_cb=_cb)
             progress.empty()
-            st.success(f"{n} linhas inseridas na tabela `base` com sucesso!")
+            st.success(
+                f"{n} linhas processadas: **{novos} pedidos novos** inseridos, "
+                f"**{atualizados} já existentes** atualizados (nenhum duplicado)."
+            )
             st.balloons()
             st.cache_data.clear()
 
