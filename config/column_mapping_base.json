@@ -1,0 +1,524 @@
+[
+  {
+    "idx": 0,
+    "original": "运单号(Número do Waybill)",
+    "label": "Número do Waybill",
+    "slug": "numero_do_waybill"
+  },
+  {
+    "idx": 1,
+    "original": "扫描单号(Número de ordem de escaneamento)",
+    "label": "Número de ordem de escaneamento",
+    "slug": "numero_de_ordem_de_escaneamento"
+  },
+  {
+    "idx": 2,
+    "original": "安骏订单号(Número do pedido Anjun)",
+    "label": "Número do pedido Anjun",
+    "slug": "numero_do_pedido_anjun"
+  },
+  {
+    "idx": 3,
+    "original": "包裹类型(Tipo do pacote)",
+    "label": "Tipo do pacote",
+    "slug": "tipo_do_pacote"
+  },
+  {
+    "idx": 4,
+    "original": "运单状态(Status do Pacote)",
+    "label": "Status do Pacote",
+    "slug": "status_do_pacote"
+  },
+  {
+    "idx": 5,
+    "original": "最新轨迹时间(Último data de rastreio)",
+    "label": "Último data de rastreio",
+    "slug": "ultimo_data_de_rastreio"
+  },
+  {
+    "idx": 6,
+    "original": "最新轨迹内容(Último rastreio)",
+    "label": "Último rastreio",
+    "slug": "ultimo_rastreio"
+  },
+  {
+    "idx": 7,
+    "original": "最新轨迹网点(Último ponto de rastreio)",
+    "label": "Último ponto de rastreio",
+    "slug": "ultimo_ponto_de_rastreio"
+  },
+  {
+    "idx": 8,
+    "original": "问题件原因(Motivo da Ocorrência)",
+    "label": "Motivo da Ocorrência",
+    "slug": "motivo_da_ocorrencia"
+  },
+  {
+    "idx": 9,
+    "original": "标签(Tag)",
+    "label": "Tag",
+    "slug": "tag"
+  },
+  {
+    "idx": 10,
+    "original": "订单类型(Tipo do pedido)",
+    "label": "Tipo do pedido",
+    "slug": "tipo_do_pedido"
+  },
+  {
+    "idx": 11,
+    "original": "收件人州(Estado do destinatário)",
+    "label": "Estado do destinatário",
+    "slug": "estado_do_destinatario"
+  },
+  {
+    "idx": 12,
+    "original": "收件人城市(Cidade do destinatário)",
+    "label": "Cidade do destinatário",
+    "slug": "cidade_do_destinatario"
+  },
+  {
+    "idx": 13,
+    "original": "收件人区(Bairro do destinatário)",
+    "label": "Bairro do destinatário",
+    "slug": "bairro_do_destinatario"
+  },
+  {
+    "idx": 14,
+    "original": "收件人街道(Rua do destinatário)",
+    "label": "Rua do destinatário",
+    "slug": "rua_do_destinatario"
+  },
+  {
+    "idx": 15,
+    "original": "收件人邮编(CEP do destinatário)",
+    "label": "CEP do destinatário",
+    "slug": "cep_do_destinatario"
+  },
+  {
+    "idx": 16,
+    "original": "区域(Zona)",
+    "label": "Zona",
+    "slug": "zona"
+  },
+  {
+    "idx": 17,
+    "original": "城镇类型(Tipo de cidade)",
+    "label": "Tipo de cidade",
+    "slug": "tipo_de_cidade"
+  },
+  {
+    "idx": 18,
+    "original": "发件人州(Estado de origem)",
+    "label": "Estado de origem",
+    "slug": "estado_de_origem"
+  },
+  {
+    "idx": 19,
+    "original": "发件人城市(Cidade do remetente)",
+    "label": "Cidade do remetente",
+    "slug": "cidade_do_remetente"
+  },
+  {
+    "idx": 20,
+    "original": "发件地区类型(Hierarquia urbana de origem)",
+    "label": "Hierarquia urbana de origem",
+    "slug": "hierarquia_urbana_de_origem"
+  },
+  {
+    "idx": 21,
+    "original": "客户名称(Nome do cliente)",
+    "label": "Nome do cliente",
+    "slug": "nome_do_cliente"
+  },
+  {
+    "idx": 22,
+    "original": "商户名称(Nome do Cliente Merchant)",
+    "label": "Nome do Cliente Merchant",
+    "slug": "nome_do_cliente_merchant"
+  },
+  {
+    "idx": 23,
+    "original": "大区(Região)",
+    "label": "Região",
+    "slug": "regiao"
+  },
+  {
+    "idx": 24,
+    "original": "预派送网点(Ponto de Pré-entrega)",
+    "label": "Ponto de Pré-entrega",
+    "slug": "ponto_de_pre_entrega"
+  },
+  {
+    "idx": 25,
+    "original": "实际入库网点(Ponto de entrada)",
+    "label": "Ponto de entrada",
+    "slug": "ponto_de_entrada"
+  },
+  {
+    "idx": 26,
+    "original": "实际入库网点州(Estado do ponto de entrada)",
+    "label": "Estado do ponto de entrada",
+    "slug": "estado_do_ponto_de_entrada"
+  },
+  {
+    "idx": 27,
+    "original": "实际派送网点(Ponto de entrega)",
+    "label": "Ponto de entrega",
+    "slug": "ponto_de_entrega"
+  },
+  {
+    "idx": 28,
+    "original": "派送员(entregador)",
+    "label": "entregador",
+    "slug": "entregador"
+  },
+  {
+    "idx": 29,
+    "original": "揽收类型(Tipo de coleta)",
+    "label": "Tipo de coleta",
+    "slug": "tipo_de_coleta"
+  },
+  {
+    "idx": 30,
+    "original": "签收类型(Tipo de assinatura)",
+    "label": "Tipo de assinatura",
+    "slug": "tipo_de_assinatura"
+  },
+  {
+    "idx": 31,
+    "original": "签收人类型(Tipo do destinatário)",
+    "label": "Tipo do destinatário",
+    "slug": "tipo_do_destinatario"
+  },
+  {
+    "idx": 32,
+    "original": "签收人关系(Relação do Destinatário)",
+    "label": "Relação do Destinatário",
+    "slug": "relacao_do_destinatario"
+  },
+  {
+    "idx": 33,
+    "original": "订单创建时间(Criação de pedido)",
+    "label": "Criação de pedido",
+    "slug": "criacao_de_pedido"
+  },
+  {
+    "idx": 34,
+    "original": "客户出仓时间(Saída do armazém do cliente)",
+    "label": "Saída do armazém do cliente",
+    "slug": "saida_do_armazem_do_cliente"
+  },
+  {
+    "idx": 35,
+    "original": "末端揽收时间(Coleta de LM)",
+    "label": "Coleta de LM",
+    "slug": "coleta_de_lm"
+  },
+  {
+    "idx": 36,
+    "original": "揽收装车时间(Carregamento da coleta)",
+    "label": "Carregamento da coleta",
+    "slug": "carregamento_da_coleta"
+  },
+  {
+    "idx": 37,
+    "original": "揽收下一站(Próxima Parada da Coleta)",
+    "label": "Próxima Parada da Coleta",
+    "slug": "proxima_parada_da_coleta"
+  },
+  {
+    "idx": 38,
+    "original": "揽收时长(小时)(Range rover duração (horas))",
+    "label": "Range rover duração (horas)",
+    "slug": "range_rover_duracao_horas"
+  },
+  {
+    "idx": 39,
+    "original": "揽收运输时长(H)(Tempo de Transporte de Coleta(H))",
+    "label": "Tempo de Transporte de Coleta(H)",
+    "slug": "tempo_de_transporte_de_coleta_h"
+  },
+  {
+    "idx": 40,
+    "original": "揽收封车时间(Fechamento do veículo da coleta)",
+    "label": "Fechamento do veículo da coleta",
+    "slug": "fechamento_do_veiculo_da_coleta"
+  },
+  {
+    "idx": 41,
+    "original": "HUB1解封车时间(Abertura do veículo do HUB1)",
+    "label": "Abertura do veículo do HUB1",
+    "slug": "abertura_do_veiculo_do_hub1"
+  },
+  {
+    "idx": 42,
+    "original": "一级分拨到件时间(Entrada no centro nível 01)",
+    "label": "Entrada no centro nível 01",
+    "slug": "entrada_no_centro_nivel_01"
+  },
+  {
+    "idx": 43,
+    "original": "实际到件分拨中心(Centro real de chegada)",
+    "label": "Centro real de chegada",
+    "slug": "centro_real_de_chegada"
+  },
+  {
+    "idx": 44,
+    "original": "一级分拨发件时间(Saída do centro nível 01)",
+    "label": "Saída do centro nível 01",
+    "slug": "saida_do_centro_nivel_01"
+  },
+  {
+    "idx": 45,
+    "original": "下一站(Próximo ponto)",
+    "label": "Próximo ponto",
+    "slug": "proximo_ponto"
+  },
+  {
+    "idx": 46,
+    "original": "HUB1封车时间(Fechamento do veículo do HUB1)",
+    "label": "Fechamento do veículo do HUB1",
+    "slug": "fechamento_do_veiculo_do_hub1"
+  },
+  {
+    "idx": 47,
+    "original": "一级分拨操作时长(Duração da operação do centro nível 01)",
+    "label": "Duração da operação do centro nível 01",
+    "slug": "duracao_da_operacao_do_centro_nivel_01"
+  },
+  {
+    "idx": 48,
+    "original": "HUB2解封车时间(Abertura do veículo do HUB2)",
+    "label": "Abertura do veículo do HUB2",
+    "slug": "abertura_do_veiculo_do_hub2"
+  },
+  {
+    "idx": 49,
+    "original": "二级分拨到件时间(Entrada no centro nível 02)",
+    "label": "Entrada no centro nível 02",
+    "slug": "entrada_no_centro_nivel_02"
+  },
+  {
+    "idx": 50,
+    "original": "实际到件分拨中心(Centro real de chegada)",
+    "label": "Centro real de chegada",
+    "slug": "centro_real_de_chegada_2"
+  },
+  {
+    "idx": 51,
+    "original": "二级分拨发件时间(Saída do centro nível 02)",
+    "label": "Saída do centro nível 02",
+    "slug": "saida_do_centro_nivel_02"
+  },
+  {
+    "idx": 52,
+    "original": "下一站(Próximo ponto)",
+    "label": "Próximo ponto",
+    "slug": "proximo_ponto_2"
+  },
+  {
+    "idx": 53,
+    "original": "HUB2封车时间(Fechamento do veículo do HUB2)",
+    "label": "Fechamento do veículo do HUB2",
+    "slug": "fechamento_do_veiculo_do_hub2"
+  },
+  {
+    "idx": 54,
+    "original": "二级分拨操作时长(Duração da operação do centro nível 02)",
+    "label": "Duração da operação do centro nível 02",
+    "slug": "duracao_da_operacao_do_centro_nivel_02"
+  },
+  {
+    "idx": 55,
+    "original": "HUB3解封车时间(Abertura do veículo do HUB3)",
+    "label": "Abertura do veículo do HUB3",
+    "slug": "abertura_do_veiculo_do_hub3"
+  },
+  {
+    "idx": 56,
+    "original": "三级分拨到件时间(Entrada no centro nível 03)",
+    "label": "Entrada no centro nível 03",
+    "slug": "entrada_no_centro_nivel_03"
+  },
+  {
+    "idx": 57,
+    "original": "实际到件分拨中心(Centro real de chegada)",
+    "label": "Centro real de chegada",
+    "slug": "centro_real_de_chegada_3"
+  },
+  {
+    "idx": 58,
+    "original": "三级分拨发件时间(Saída do centro nível 03)",
+    "label": "Saída do centro nível 03",
+    "slug": "saida_do_centro_nivel_03"
+  },
+  {
+    "idx": 59,
+    "original": "下一站(Próximo ponto)",
+    "label": "Próximo ponto",
+    "slug": "proximo_ponto_3"
+  },
+  {
+    "idx": 60,
+    "original": "HUB3封车时间(Tempo de bloqueio do HUB3)",
+    "label": "Tempo de bloqueio do HUB3",
+    "slug": "tempo_de_bloqueio_do_hub3"
+  },
+  {
+    "idx": 61,
+    "original": "三级分拨操作时长(Duração da operação do centro de distribuição nível 03)",
+    "label": "Duração da operação do centro de distribuição nível 03",
+    "slug": "duracao_da_operacao_do_centro_de_distribuicao_nivel_03"
+  },
+  {
+    "idx": 62,
+    "original": "网点解封车时间(Tempo de Desbloquear o veículo)",
+    "label": "Tempo de Desbloquear o veículo",
+    "slug": "tempo_de_desbloquear_o_veiculo"
+  },
+  {
+    "idx": 63,
+    "original": "网点入库时间(Tempo de inbound no ponto)",
+    "label": "Tempo de inbound no ponto",
+    "slug": "tempo_de_inbound_no_ponto"
+  },
+  {
+    "idx": 64,
+    "original": "网点派件时间(Hora de Entrega do Ponto)",
+    "label": "Hora de Entrega do Ponto",
+    "slug": "hora_de_entrega_do_ponto"
+  },
+  {
+    "idx": 65,
+    "original": "第一次派送时间(Primeiro horário de entrega)",
+    "label": "Primeiro horário de entrega",
+    "slug": "primeiro_horario_de_entrega"
+  },
+  {
+    "idx": 66,
+    "original": "第二次派送时间(Segundo horário de entrega)",
+    "label": "Segundo horário de entrega",
+    "slug": "segundo_horario_de_entrega"
+  },
+  {
+    "idx": 67,
+    "original": "第三次派送时间(Terceiro horário de entrega)",
+    "label": "Terceiro horário de entrega",
+    "slug": "terceiro_horario_de_entrega"
+  },
+  {
+    "idx": 68,
+    "original": "首派时间(Hora do Primeira Entrega)",
+    "label": "Hora do Primeira Entrega",
+    "slug": "hora_do_primeira_entrega"
+  },
+  {
+    "idx": 69,
+    "original": "签收时间(Tempo de Assinatura)",
+    "label": "Tempo de Assinatura",
+    "slug": "tempo_de_assinatura"
+  },
+  {
+    "idx": 70,
+    "original": "网点派件时长(H)(Tempo de Despacho do Ponto(H))",
+    "label": "Tempo de Despacho do Ponto(H)",
+    "slug": "tempo_de_despacho_do_ponto_h"
+  },
+  {
+    "idx": 71,
+    "original": "派件在途时长(H)(Tempo de Trânsito de Despacho(H))",
+    "label": "Tempo de Trânsito de Despacho(H)",
+    "slug": "tempo_de_transito_de_despacho_h"
+  },
+  {
+    "idx": 72,
+    "original": "首派所用时长(Duração do Primeira Entrega)",
+    "label": "Duração do Primeira Entrega",
+    "slug": "duracao_do_primeira_entrega"
+  },
+  {
+    "idx": 73,
+    "original": "网点签收时长(H)(Tempo de Assinatura do Ponto(H))",
+    "label": "Tempo de Assinatura do Ponto(H)",
+    "slug": "tempo_de_assinatura_do_ponto_h"
+  },
+  {
+    "idx": 74,
+    "original": "总签收时长(H)(Tempo Total de Assinatura(H))",
+    "label": "Tempo Total de Assinatura(H)",
+    "slug": "tempo_total_de_assinatura_h"
+  },
+  {
+    "idx": 75,
+    "original": "HUB1发出运输时长(H)(Tempo de Transporte HUB1(H))",
+    "label": "Tempo de Transporte HUB1(H)",
+    "slug": "tempo_de_transporte_hub1_h"
+  },
+  {
+    "idx": 76,
+    "original": "HUB2发出运输时长(H)(Tempo de Transporte HUB2(H))",
+    "label": "Tempo de Transporte HUB2(H)",
+    "slug": "tempo_de_transporte_hub2_h"
+  },
+  {
+    "idx": 77,
+    "original": "HUB3发出运输时长(H)(Tempo de Transporte HUB3(H))",
+    "label": "Tempo de Transporte HUB3(H)",
+    "slug": "tempo_de_transporte_hub3_h"
+  },
+  {
+    "idx": 78,
+    "original": "客户时效要求天数(Dias de prazo requisitados por cliente)",
+    "label": "Dias de prazo requisitados por cliente",
+    "slug": "dias_de_prazo_requisitados_por_cliente"
+  },
+  {
+    "idx": 79,
+    "original": "理应送达时间(Horário em que deve ser entregue)",
+    "label": "Horário em que deve ser entregue",
+    "slug": "horario_em_que_deve_ser_entregue"
+  },
+  {
+    "idx": 80,
+    "original": "客户要求闭环天数(O cliente pede o número de dias do ciclo fechado)",
+    "label": "O cliente pede o número de dias do ciclo fechado",
+    "slug": "o_cliente_pede_o_numero_de_dias_do_ciclo_fechado"
+  },
+  {
+    "idx": 81,
+    "original": "客户要求闭环时间(Cliente solicita tempo de ciclo fechado)",
+    "label": "Cliente solicita tempo de ciclo fechado",
+    "slug": "cliente_solicita_tempo_de_ciclo_fechado"
+  },
+  {
+    "idx": 82,
+    "original": "超时时长(H)(Duração do Atraso)",
+    "label": "Duração do Atraso",
+    "slug": "duracao_do_atraso"
+  },
+  {
+    "idx": 83,
+    "original": "超时天数(Dias de Atraso)",
+    "label": "Dias de Atraso",
+    "slug": "dias_de_atraso"
+  },
+  {
+    "idx": 84,
+    "original": "问题件登记时间(Hora de registro do item com problema)",
+    "label": "Hora de registro do item com problema",
+    "slug": "hora_de_registro_do_item_com_problema"
+  },
+  {
+    "idx": 85,
+    "original": "问题件登记网点(Ponto de registro de problema)",
+    "label": "Ponto de registro de problema",
+    "slug": "ponto_de_registro_de_problema"
+  },
+  {
+    "idx": 86,
+    "original": "网点首次退件时间(Data da primeira devolução do ponto de serviço)",
+    "label": "Data da primeira devolução do ponto de serviço",
+    "slug": "data_da_primeira_devolucao_do_ponto_de_servico"
+  }
+]

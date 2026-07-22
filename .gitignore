@@ -1,0 +1,12 @@
+# NUNCA suba a senha do banco
+.streamlit/secrets.toml
+
+# Lixo do Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Lixo do sistema
+.DS_Store
+Thumbs.db
