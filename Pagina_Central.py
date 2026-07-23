@@ -271,8 +271,9 @@ ETAPAS = [
     ("tempo_em_hub1_perus", "Parado no HUB1 / HUB1 停留"),
     ("tempo_trans_hub1_x_hub2_perus_hub2", "Trânsito HUB1 → HUB2 / HUB1 → HUB2 转运"),
     ("tempo_em_hub2_hub2", "Parado no HUB2 / HUB2 停留"),
-    ("tempo_trans_hub2_x_hub3_hub2_hub3", "Trânsito HUB2 → HUB3 / HUB2 → HUB3 转运"),
-    ("tempo_em_hub3_hub3", "Parado no HUB3 / HUB3 停留"),
+    # Removidas: "Trânsito HUB2 → HUB3" e "Parado no HUB3" -- menos de 1% dos
+    # pacotes passa por um 3o hub, entao ficavam quase sempre zeradas e só
+    # ocupavam espaço na tabela/gráfico sem agregar sinal.
     ("tempo_trans_hub3_hub2_x_last_mile_hub3_hub2_dsp", "Trânsito HUB3/HUB2 → Last Mile / HUB3/HUB2 → 末端 转运"),
     ("parado_em_lm_dsp", "Parado no Last Mile (DSP) / 末端网点(DSP) 停留"),
     ("tempo_em_rota_de_entrega", "Em rota de entrega → Finalização / 派送途中 → 签收完成"),
@@ -714,7 +715,10 @@ def render_logistico():
         for uf in agrupado_uf.index
     ]
     tabela_uf["Volumetria"] = agrupado_uf["volumetria"].astype(int).apply(lambda x: f"{x:,}".replace(",", "."))
-    st.dataframe(tabela_uf, use_container_width=True)
+
+    tabela_uf_display = tabela_uf.T
+    tabela_uf_display.index.name = "Etapa / 环节"
+    st.dataframe(tabela_uf_display, use_container_width=True)
     if tem_periodo_anterior:
         st.caption("🟢 lead time caiu (melhorou) · 🔴 lead time subiu (piorou) · ⚪ variação menor que 0,5%")
         st.caption("🟢 时效缩短（改善）· 🔴 时效延长（恶化）· ⚪ 变化小于0.5%")
