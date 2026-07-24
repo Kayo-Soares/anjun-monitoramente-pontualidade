@@ -718,7 +718,15 @@ def render_logistico():
 
     tabela_uf_display = tabela_uf.T
     tabela_uf_display.index.name = "Etapa / 环节"
-    st.dataframe(tabela_uf_display, use_container_width=True)
+
+    etapas_disponiveis = tabela_uf_display.index.tolist()
+    etapas_selecionadas = st.multiselect(
+        "Filtrar etapa(s) / 筛选环节",
+        etapas_disponiveis, default=etapas_disponiveis,
+        help="Deixa vazio pra ver tudo, ou escolhe só a(s) etapa(s) que quiser olhar isoladamente.",
+    )
+    linhas_mostrar = etapas_selecionadas if etapas_selecionadas else etapas_disponiveis
+    st.dataframe(tabela_uf_display.loc[linhas_mostrar], use_container_width=True)
     if tem_periodo_anterior:
         st.caption("🟢 lead time caiu (melhorou) · 🔴 lead time subiu (piorou) · ⚪ variação menor que 0,5%")
         st.caption("🟢 时效缩短（改善）· 🔴 时效延长（恶化）· ⚪ 变化小于0.5%")
