@@ -973,9 +973,18 @@ def render_logistico():
                         return "background-color: #E6F4EA; color: #0B5A2A;"
                     return ""
 
+                col_h_ant = f"{etapa_sel_nome} Sem{sem_anterior}(h)"
+                col_h_atu = f"{etapa_sel_nome} Sem{sem_atual}(h)"
+                col_h_var = f"Var {etapa_sel_nome}(h)"
+
+                def fmt_h(x):
+                    return f"{x:.1f}".replace(".", ",") if pd.notna(x) else "N/A"
+
                 styler_lider = t.style.map(cor_status, subset=["Status"]).format(
                     {"Var Vol %": lambda x: f"{x:+.0f}%" if pd.notna(x) else "N/A",
-                     "Var Vol": lambda x: f"{x:+,.0f}".replace(",", ".") if pd.notna(x) else "N/A"},
+                     "Var Vol": lambda x: f"{x:+,.0f}".replace(",", ".") if pd.notna(x) else "N/A",
+                     col_h_ant: fmt_h, col_h_atu: fmt_h,
+                     col_h_var: lambda x: f"{x:+.1f}".replace(".", ",") if pd.notna(x) else "N/A"},
                     na_rep="N/A",
                 )
                 st.caption(f"Semana anterior: **{sem_anterior}** · Semana atual: **{sem_atual}**")
