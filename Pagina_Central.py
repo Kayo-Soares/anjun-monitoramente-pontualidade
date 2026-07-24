@@ -16,6 +16,7 @@ import re
 from datetime import datetime, timedelta, date
 
 import pandas as pd
+import numpy as np
 import psycopg2
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -230,15 +231,17 @@ def insert_base(data_df, mapping, arquivo_origem, periodo, batch_size=1000, prog
     return total, novos, atualizados
 
 
-def upsert_supervisor(ponto, supervisor):
+def upsert_supervisor(ponto, supervisor, lider=None):
     run_write(
         """
-        INSERT INTO public.supervisores (ponto, supervisor)
-        VALUES (%(ponto)s, %(supervisor)s)
+        INSERT INTO public.supervisores (ponto, supervisor, lider)
+        VALUES (%(ponto)s, %(supervisor)s, %(lider)s)
         ON CONFLICT (ponto) DO UPDATE
-          SET supervisor = EXCLUDED.supervisor, atualizado_em = now()
+          SET supervisor = EXCLUDED.supervisor,
+              lider = COALESCE(EXCLUDED.lider, public.supervisores.lider),
+              atualizado_em = now()
         """,
-        {"ponto": ponto, "supervisor": supervisor},
+        {"ponto": ponto, "supervisor": supervisor, "lider": lider},
     )
 
 
@@ -884,6 +887,100 @@ def render_logistico():
     with sub_iata:
         renderizar_comparativo("ponto_de_entrega", "IATA")
 
+    st.divider()
+
+    # -------------------- Visão por Líder --------------------
+    st.header("👔 Visão por Líder / 按领导划分")
+    st.caption(
+        "Compara uma etapa específica, semana anterior vs atual, só nos pontos do líder escolhido. "
+        "Líder é um nível acima do supervisor -- um líder responde por vários pontos/supervisores."
+    )
+
+    lideres_df = run_query("SELECT DISTINCT lider FROM public.supervisores WHERE lider IS NOT NULL ORDER BY lider")
+    if lideres_df.empty:
+        st.info("Nenhum líder cadastrado ainda. Cadastre na aba Supervisores (coluna `lider` na tabela `supervisores`).")
+    else:
+        col_lid, col_etapa = st.columns(2)
+        with col_lid:
+            lider_sel = st.selectbox("Líder", lideres_df["lider"].tolist())
+        with col_etapa:
+            etapa_sel_nome = st.selectbox("Etapa a comparar", [n for _, n in ETAPAS], index=3)
+        etapa_sel_col = dict((n, c) for c, n in ETAPAS)[etapa_sel_nome]
+
+        # Busca os pontos do lider primeiro (tabela pequena) e filtra a base com
+        # "= ANY(...)" direto no indice de ponto_de_entrega -- um JOIN direto com
+        # supervisores aqui gerava um plano de consulta ruim na base (700k+ linhas)
+        # e estourava timeout.
+        pontos_lider = run_query(
+            "SELECT ponto FROM public.supervisores WHERE lider = %(lider)s", {"lider": lider_sel}
+        )["ponto"].tolist()
+
+        semanas_lider = run_query(
+            """SELECT DISTINCT week FROM public.base
+               WHERE ponto_de_entrega = ANY(%(pontos)s) AND week IS NOT NULL
+               ORDER BY week DESC LIMIT 2""",
+            {"pontos": pontos_lider},
+        )["week"].tolist()
+
+        if len(semanas_lider) < 2:
+            st.warning(f"Não há 2 semanas distintas de dados pros pontos do {lider_sel} ainda.")
+        else:
+            sem_atual, sem_anterior = semanas_lider[0], semanas_lider[1]
+            dados_lider = run_query(
+                f"""SELECT ponto_de_entrega AS iata, week,
+                           avg(EXTRACT(EPOCH FROM {etapa_sel_col})) / 3600.0 AS media_h,
+                           count(*) AS vol
+                    FROM public.base
+                    WHERE ponto_de_entrega = ANY(%(pontos)s) AND week IN (%(sa)s, %(sant)s)
+                    GROUP BY ponto_de_entrega, week""",
+                {"pontos": pontos_lider, "sa": sem_atual, "sant": sem_anterior},
+            )
+
+            if dados_lider.empty:
+                st.warning("Sem dados pra montar a comparação.")
+            else:
+                piv = dados_lider.pivot(index="iata", columns="week", values=["media_h", "vol"])
+                t = pd.DataFrame(index=piv.index)
+                t["IATA"] = piv.index
+                t[f"{etapa_sel_nome} Sem{sem_anterior}(h)"] = piv[("media_h", sem_anterior)].round(1)
+                t[f"Vol Sem{sem_anterior}"] = piv[("vol", sem_anterior)]
+                t[f"{etapa_sel_nome} Sem{sem_atual}(h)"] = piv[("media_h", sem_atual)].round(1)
+                t[f"Vol Sem{sem_atual}"] = piv[("vol", sem_atual)]
+                t = t.reset_index(drop=True)
+
+                def calc_status(row):
+                    v_ant = row[f"{etapa_sel_nome} Sem{sem_anterior}(h)"]
+                    v_atu = row[f"{etapa_sel_nome} Sem{sem_atual}(h)"]
+                    if pd.isna(v_atu):
+                        return pd.Series([np.nan, np.nan, np.nan, f"⚠️ Sem dados Sem{sem_atual}"])
+                    if pd.isna(v_ant):
+                        return pd.Series([np.nan, np.nan, np.nan, f"⚠️ Sem dados Sem{sem_anterior}"])
+                    var_h = round(v_atu - v_ant, 1)
+                    vol_ant = row[f"Vol Sem{sem_anterior}"]
+                    vol_atu = row[f"Vol Sem{sem_atual}"]
+                    var_vol = int(vol_atu - vol_ant) if pd.notna(vol_ant) and pd.notna(vol_atu) else np.nan
+                    var_vol_pct = round(100 * var_vol / vol_ant, 0) if vol_ant else np.nan
+                    status = "⚠️ Aumento" if var_h > 0 else ("✅ Redução" if var_h < 0 else "⚪ Estável")
+                    return pd.Series([var_h, var_vol, var_vol_pct, status])
+
+                t[[f"Var {etapa_sel_nome}(h)", "Var Vol", "Var Vol %", "Status"]] = t.apply(calc_status, axis=1)
+                t = t.sort_values(f"Var {etapa_sel_nome}(h)", ascending=False, na_position="first")
+
+                def cor_status(v):
+                    if isinstance(v, str) and v.startswith("⚠️"):
+                        return "background-color: #FDECEC; color: #9C0006;"
+                    if isinstance(v, str) and v.startswith("✅"):
+                        return "background-color: #E6F4EA; color: #0B5A2A;"
+                    return ""
+
+                styler_lider = t.style.map(cor_status, subset=["Status"]).format(
+                    {"Var Vol %": lambda x: f"{x:+.0f}%" if pd.notna(x) else "N/A",
+                     "Var Vol": lambda x: f"{x:+,.0f}".replace(",", ".") if pd.notna(x) else "N/A"},
+                    na_rep="N/A",
+                )
+                st.caption(f"Semana anterior: **{sem_anterior}** · Semana atual: **{sem_atual}**")
+                st.dataframe(styler_lider, use_container_width=True, hide_index=True)
+
 with tab_upload:
     render_upload()
 
@@ -1006,29 +1103,44 @@ with tab_supervisores:
 
     st.markdown("#### Cadastro atual")
     sups_full = run_query(
-        "SELECT ponto, supervisor, atualizado_em FROM public.supervisores ORDER BY supervisor, ponto"
+        "SELECT ponto, supervisor, lider, atualizado_em FROM public.supervisores ORDER BY COALESCE(lider,''), supervisor, ponto"
     )
     st.dataframe(sups_full, use_container_width=True, hide_index=True)
 
     st.markdown("#### Adicionar / atualizar ponto")
+    lideres_existentes = run_query("SELECT DISTINCT lider FROM public.supervisores WHERE lider IS NOT NULL ORDER BY lider")["lider"].tolist()
     with st.form("form_supervisor", clear_on_submit=True):
         col_a, col_b = st.columns(2)
         with col_a:
             ponto_input = st.text_input("Código do ponto (ex: PA-W-D040)")
         with col_b:
             supervisor_input = st.text_input("Nome do supervisor")
+
+        opcao_lider = st.selectbox(
+            "Líder (opcional -- nível acima do supervisor)",
+            ["(não informar / manter o que já existe)"] + lideres_existentes + ["➕ Novo líder..."],
+        )
+        if opcao_lider == "➕ Novo líder...":
+            lider_input = st.text_input("Nome do novo líder")
+        elif opcao_lider == "(não informar / manter o que já existe)":
+            lider_input = ""
+        else:
+            lider_input = opcao_lider
+
         submitted = st.form_submit_button("Salvar", type="primary")
         if submitted:
             if not ponto_input or not supervisor_input:
-                st.error("Preencha os dois campos.")
+                st.error("Preencha ponto e supervisor.")
             else:
                 ponto_clean = ponto_input.strip().upper()
                 supervisor_clean = supervisor_input.strip().upper()
-                upsert_supervisor(ponto_clean, supervisor_clean)
+                lider_clean = lider_input.strip().upper() if lider_input.strip() else None
+                upsert_supervisor(ponto_clean, supervisor_clean, lider_clean)
                 n = recalcular_pendentes(ponto_clean)
-                st.success(
-                    f"{ponto_clean} -> {supervisor_clean} salvo. "
-                    f"{n} linha(s) já existentes na base foram atualizadas."
-                )
+                msg = f"{ponto_clean} -> {supervisor_clean} salvo."
+                if lider_clean:
+                    msg += f" Líder: {lider_clean}."
+                msg += f" {n} linha(s) já existentes na base foram atualizadas."
+                st.success(msg)
                 st.cache_data.clear()
                 st.rerun()
