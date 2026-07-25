@@ -889,6 +889,130 @@ def render_logistico():
 
     st.divider()
 
+    # -------------------- Ranking de Melhoria (W anterior -> W atual) --------------------
+    st.header("🏆 Ranking de Melhoria / 改善排名")
+    st.caption(
+        "Ranking dos pontos (IATA) do mais melhorado pro mais piorado, comparando as 2 semanas "
+        "mais recentes do filtro atual. Δ Tempo Total = Δ Parado DSP + Δ Finalização."
+    )
+
+    tabela_rank, sem1_rank, sem2_rank = montar_comparativo_semanal("ponto_de_entrega", "IATA", clauses_atual, params)
+    if tabela_rank is None:
+        st.warning("Não há 2 semanas distintas no filtro atual para montar o ranking.")
+    else:
+        st.caption(f"Semana anterior: **{sem1_rank}** · Semana atual: **{sem2_rank}** / 上一周: **{sem1_rank}** · 本周: **{sem2_rank}**")
+
+        rk = tabela_rank.copy()
+        rk["Δ Tempo Total (h)"] = (rk["Var. DSP (h)"] + rk["Var. Final (h)"]).round(1)
+        rk["Δ Vol %"] = rk.apply(
+            lambda r: round(100 * r["Var. Vol"] / r["Vol Sem1"]) if r["Vol Sem1"] else np.nan, axis=1
+        )
+
+        def classificar_eficiencia(row):
+            if pd.isna(row["Δ Tempo Total (h)"]):
+                return f"🔴 Sem dados Sem{sem2_rank}"
+            if row["Δ Tempo Total (h)"] < 0 and row["Var. DSP (h)"] < 0 and row["Var. Final (h)"] < 0:
+                return "✅✅ Excelente"
+            if row["Δ Tempo Total (h)"] < 0:
+                return "✅ Melhoria"
+            return "⚠️ Aumento"
+
+        rk["Eficiência"] = rk.apply(classificar_eficiencia, axis=1)
+        # ordena: quem tem dado primeiro (do mais melhorado pro mais piorado), sem-dados no final
+        rk = rk.sort_values("Δ Tempo Total (h)", ascending=True, na_position="last").reset_index(drop=True)
+
+        medalhas = {0: "🥇 1º", 1: "🥈 2º", 2: "🥉 3º"}
+        rk.insert(0, "Ranking", [medalhas.get(i, f"{i+1}º") for i in range(len(rk))])
+
+        rank_display = rk[["Ranking", "IATA", "Var. DSP (h)", "Var. Final (h)", "Δ Tempo Total (h)",
+                            "Var. Vol", "Δ Vol %", "Eficiência"]].rename(columns={
+            "Var. DSP (h)": "Δ DSP (h)", "Var. Final (h)": "Δ Final (h)", "Var. Vol": "Δ Vol",
+        })
+
+        def cor_eficiencia(v):
+            if isinstance(v, str) and v.startswith("✅✅"):
+                return "background-color: #C6EFCE; color: #0B5A2A; font-weight: 700;"
+            if isinstance(v, str) and v.startswith("✅"):
+                return "background-color: #E6F4EA; color: #0B5A2A;"
+            if isinstance(v, str) and v.startswith("⚠️"):
+                return "background-color: #FDECEC; color: #9C0006;"
+            if isinstance(v, str) and v.startswith("🔴"):
+                return "background-color: #F5F5F5; color: #9C0006;"
+            return ""
+
+        styler_rank = rank_display.style.map(cor_eficiencia, subset=["Eficiência"]).format(
+            {
+                "Δ DSP (h)": lambda x: f"{x:+.1f}".replace(".", ",") if pd.notna(x) else "N/A",
+                "Δ Final (h)": lambda x: f"{x:+.1f}".replace(".", ",") if pd.notna(x) else "N/A",
+                "Δ Tempo Total (h)": lambda x: f"{x:+.1f}".replace(".", ",") if pd.notna(x) else "N/A",
+                "Δ Vol": lambda x: f"{x:+,.0f}".replace(",", ".") if pd.notna(x) else "N/A",
+                "Δ Vol %": lambda x: f"{x:+.0f}%" if pd.notna(x) else "N/A",
+            },
+            na_rep="N/A",
+        )
+        st.dataframe(styler_rank, use_container_width=True, hide_index=True)
+        st.caption("✅✅ Excelente = melhorou nas duas etapas · ✅ Melhoria = melhorou no total · ⚠️ Aumento = piorou no total · 🔴 Sem dados = ponto sem volume na semana atual")
+
+    st.divider()
+
+    # -------------------- Tempo de Finalização por Entregador --------------------
+    st.header("🚚 Tempo de Finalização por Entregador / 按派送员划分的签收时长")
+    st.caption(
+        "Tempo médio entre 'Em rota de entrega' e a finalização (assinatura), por entregador -- "
+        "quanto tempo cada um leva, em média, pra fechar os pedidos que estão com ele."
+    )
+
+    pontos_disponiveis = run_query(
+        "SELECT DISTINCT ponto_de_entrega AS v FROM public.base WHERE ponto_de_entrega IS NOT NULL ORDER BY 1"
+    )["v"].tolist()
+    f_ponto_entregador = st.multiselect("Filtrar por base / Ponto de Entrega", pontos_disponiveis, key="filtro_entregador")
+
+    clauses_entregador = ["entregador IS NOT NULL", "tempo_em_rota_de_entrega IS NOT NULL"]
+    params_entregador = {}
+    if f_ponto_entregador:
+        clauses_entregador.append("ponto_de_entrega = ANY(%(pontos_entregador)s)")
+        params_entregador["pontos_entregador"] = f_ponto_entregador
+
+    df_entregador = run_query(
+        f"""SELECT entregador, min(ponto_de_entrega) AS base_referencia,
+                   count(*) AS volume,
+                   avg(EXTRACT(EPOCH FROM tempo_em_rota_de_entrega)) / 3600.0 AS media_h
+            FROM public.base
+            {compose_where(clauses_entregador)}
+            GROUP BY entregador
+            HAVING count(*) >= 5
+            ORDER BY media_h DESC
+            LIMIT 30""",
+        params_entregador,
+    )
+
+    if df_entregador.empty:
+        st.info("Nenhum entregador com volume suficiente (mínimo 5 pedidos) nesse filtro.")
+    else:
+        st.caption("Mostrando os 30 entregadores com maior tempo médio (mínimo 5 pedidos, pra evitar ruído estatístico).")
+        fig_entregador = go.Figure(go.Bar(
+            x=df_entregador["media_h"].round(1), y=df_entregador["entregador"], orientation="h",
+            marker_color=COR_VERMELHA,
+            text=[f"{v:.1f}h".replace(".", ",") for v in df_entregador["media_h"]],
+            textposition="outside", cliponaxis=False,
+        ))
+        fig_entregador.update_layout(height=700, margin=dict(l=10, r=60, t=10, b=10), xaxis_title="Horas (média)")
+        fig_entregador.update_yaxes(autorange="reversed", automargin=True)
+        st.plotly_chart(fig_entregador, use_container_width=True)
+
+        tabela_entregador = df_entregador.rename(columns={
+            "entregador": "Entregador", "base_referencia": "Base", "volume": "Volume",
+        })
+        tabela_entregador["Tempo Médio"] = df_entregador["media_h"].apply(
+            lambda h: fmt_duracao(h * 3600)
+        )
+        st.dataframe(
+            tabela_entregador[["Entregador", "Base", "Volume", "Tempo Médio"]],
+            use_container_width=True, hide_index=True,
+        )
+
+    st.divider()
+
     # -------------------- Visão por Líder --------------------
     st.header("👔 Visão por Líder / 按领导划分")
     st.caption(
