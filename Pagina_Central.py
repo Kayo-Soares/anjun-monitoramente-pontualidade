@@ -124,11 +124,21 @@ def get_connection():
 
 
 def run_query(sql: str, params: dict | None = None) -> pd.DataFrame:
+    """Se a conexão cacheada morreu (ex: depois de um timeout que derrubou o
+    socket), reconecta automaticamente em vez de deixar o app travado pra
+    todo mundo até alguém reiniciar manualmente."""
     conn = get_connection()
     try:
         return pd.read_sql(sql, conn, params=params)
+    except (psycopg2.InterfaceError, psycopg2.OperationalError):
+        get_connection.clear()  # descarta a conexão quebrada do cache
+        conn = get_connection()  # abre uma nova
+        return pd.read_sql(sql, conn, params=params)
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         raise
 
 
