@@ -10,6 +10,7 @@ A tabela public.base no Supabase tem um trigger que calcula automaticamente
 este app só precisa inserir as colunas cruas.
 """
 
+import io
 import json
 import os
 import re
@@ -1126,26 +1127,34 @@ with tab_painel:
     sups_df = run_query("SELECT DISTINCT supervisor FROM public.supervisores ORDER BY supervisor")
     opcoes_supervisor = ["Todos"] + sups_df["supervisor"].tolist()
 
-    periodos_df = run_query(
-        "SELECT DISTINCT periodo_referencia FROM public.base "
-        "WHERE periodo_referencia IS NOT NULL ORDER BY periodo_referencia DESC"
+    bounds_finalizacao = run_query(
+        "SELECT min(finalizacao)::date AS mn, max(finalizacao)::date AS mx FROM public.base WHERE finalizacao IS NOT NULL"
     )
-    opcoes_periodo = ["Todos"] + periodos_df["periodo_referencia"].tolist()
+    data_min_fin, data_max_fin = bounds_finalizacao.iloc[0]["mn"], bounds_finalizacao.iloc[0]["mx"]
 
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 2])
     with col1:
         supervisor_sel = st.selectbox("Supervisor", opcoes_supervisor)
     with col2:
-        periodo_sel = st.selectbox("Período", opcoes_periodo)
+        if pd.notna(data_min_fin) and pd.notna(data_max_fin):
+            periodo_fin = st.date_input(
+                "Data de finalização", value=(data_min_fin, data_max_fin),
+                min_value=data_min_fin, max_value=data_max_fin,
+            )
+        else:
+            periodo_fin = None
+            st.info("Sem dados de finalização na base ainda.")
 
     where_clauses = []
     params = {}
     if supervisor_sel != "Todos":
         where_clauses.append("supervisor = %(supervisor)s")
         params["supervisor"] = supervisor_sel
-    if periodo_sel != "Todos":
-        where_clauses.append("periodo_referencia = %(periodo)s")
-        params["periodo"] = periodo_sel
+    if periodo_fin is not None and isinstance(periodo_fin, tuple) and len(periodo_fin) == 2:
+        ini_fin, fim_fin = periodo_fin
+        where_clauses.append("finalizacao::date BETWEEN %(ini_fin)s AND %(fim_fin)s")
+        params["ini_fin"] = ini_fin
+        params["fim_fin"] = fim_fin
     where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     kpi = run_query(
@@ -1215,6 +1224,38 @@ with tab_painel:
         params,
     )
     st.dataframe(atrasados_df, use_container_width=True, hide_index=True)
+
+    if not atrasados_df.empty:
+        LIMITE_EXPORT = 20000
+        atrasados_export_df = run_query(
+            f"""
+            SELECT numero_do_waybill, supervisor, ponto_de_entrega, cidade_do_destinatario,
+                   status_do_pacote, dias_de_atraso, criacao, finalizacao
+            FROM public.base
+            {where_sql}{' AND ' if where_sql else 'WHERE '}
+              NULLIF(dias_de_atraso,'--') IS NOT NULL AND NULLIF(dias_de_atraso,'--')::numeric > 0
+            ORDER BY NULLIF(dias_de_atraso,'--')::numeric DESC
+            LIMIT {LIMITE_EXPORT}
+            """,
+            params,
+        )
+        buffer_excel = io.BytesIO()
+        with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
+            atrasados_export_df.to_excel(writer, index=False, sheet_name="Pedidos atrasados")
+        buffer_excel.seek(0)
+
+        nome_arquivo = f"pedidos_atrasados_{supervisor_sel if supervisor_sel != 'Todos' else 'todos'}_{datetime.now():%Y%m%d}.xlsx"
+        st.download_button(
+            "⬇️ Baixar Excel dos pedidos atrasados",
+            data=buffer_excel,
+            file_name=nome_arquivo,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            type="primary",
+        )
+        if len(atrasados_export_df) >= LIMITE_EXPORT:
+            st.caption(f"⚠️ O Excel foi limitado aos {LIMITE_EXPORT:,} pedidos com maior atraso -- estreite o filtro pra ver todos.".replace(",", "."))
+        else:
+            st.caption(f"O Excel inclui todos os {len(atrasados_export_df):,} pedidos atrasados do filtro atual (a tabela acima mostra só os 200 piores).".replace(",", "."))
 
 # ===================== ABA 3: SUPERVISORES =====================
 with tab_supervisores:
