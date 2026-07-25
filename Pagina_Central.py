@@ -347,13 +347,13 @@ def compose_where(clauses):
     return ("WHERE " + " AND ".join(clauses)) if clauses else ""
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=21600)  # 6h -- seguro porque cache_data.clear() ja roda apos cada upload
 def get_distinct(col):
     df = run_query(f"SELECT DISTINCT {col} AS v FROM public.base WHERE {col} IS NOT NULL ORDER BY 1")
     return df["v"].tolist()
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=21600)
 def get_data_bounds(campo="criacao"):
     df = run_query(f"SELECT min({campo})::date AS mn, max({campo})::date AS mx FROM public.base")
     return df.iloc[0]["mn"], df.iloc[0]["mx"]
