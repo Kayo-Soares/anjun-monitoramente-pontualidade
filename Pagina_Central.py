@@ -984,6 +984,16 @@ def render_logistico():
         clauses_entregador.append("ponto_de_entrega = ANY(%(pontos_entregador)s)")
         params_entregador["pontos_entregador"] = f_ponto_entregador
 
+    # Versão qualificada com alias "b." -- usada só na query externa, que tem
+    # 2 tabelas no escopo (b e ct) e por isso não pode ter coluna ambígua
+    # (entregador existe tanto em b quanto em ct).
+    clauses_entregador_b = [
+        c.replace("entregador", "b.entregador")
+         .replace("tempo_em_rota_de_entrega", "b.tempo_em_rota_de_entrega")
+         .replace("ponto_de_entrega", "b.ponto_de_entrega")
+        for c in clauses_entregador
+    ]
+
     # Query com CTE (cidade_top): traz, além de base/volume/tempo médio, a
     # cidade PREDOMINANTE de cada entregador (a que mais aparece nos pedidos
     # dele no filtro atual). Usa DISTINCT ON em vez de mode() WITHIN GROUP
@@ -1011,7 +1021,7 @@ def render_logistico():
             avg(EXTRACT(EPOCH FROM b.tempo_em_rota_de_entrega)) / 3600.0 AS media_h
         FROM public.base b
         LEFT JOIN cidade_top ct ON ct.entregador = b.entregador
-        {compose_where(clauses_entregador)}
+        {compose_where(clauses_entregador_b)}
         GROUP BY b.entregador, ct.cidade_predominante
         HAVING count(*) >= 5
         ORDER BY media_h DESC
