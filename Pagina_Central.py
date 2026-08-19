@@ -984,16 +984,39 @@ def render_logistico():
         clauses_entregador.append("ponto_de_entrega = ANY(%(pontos_entregador)s)")
         params_entregador["pontos_entregador"] = f_ponto_entregador
 
+    # Query com CTE (cidade_top): traz, além de base/volume/tempo médio, a
+    # cidade PREDOMINANTE de cada entregador (a que mais aparece nos pedidos
+    # dele no filtro atual). Usa DISTINCT ON em vez de mode() WITHIN GROUP
+    # porque agrega primeiro (GROUP BY entregador, cidade) e só ordena esse
+    # resultado já reduzido -- mais barato numa base de 700k+ linhas.
     df_entregador = run_query(
-        f"""SELECT entregador, min(ponto_de_entrega) AS base_referencia,
-                   count(*) AS volume,
-                   avg(EXTRACT(EPOCH FROM tempo_em_rota_de_entrega)) / 3600.0 AS media_h
-            FROM public.base
-            {compose_where(clauses_entregador)}
-            GROUP BY entregador
-            HAVING count(*) >= 5
-            ORDER BY media_h DESC
-            LIMIT 30""",
+        f"""
+        WITH cidade_top AS (
+            SELECT DISTINCT ON (entregador)
+                entregador,
+                cidade_do_destinatario AS cidade_predominante
+            FROM (
+                SELECT entregador, cidade_do_destinatario, count(*) AS n
+                FROM public.base
+                {compose_where(clauses_entregador)}
+                GROUP BY entregador, cidade_do_destinatario
+            ) contagem
+            ORDER BY entregador, n DESC
+        )
+        SELECT
+            b.entregador,
+            min(b.ponto_de_entrega) AS base_referencia,
+            ct.cidade_predominante AS cidade,
+            count(*) AS volume,
+            avg(EXTRACT(EPOCH FROM b.tempo_em_rota_de_entrega)) / 3600.0 AS media_h
+        FROM public.base b
+        LEFT JOIN cidade_top ct ON ct.entregador = b.entregador
+        {compose_where(clauses_entregador)}
+        GROUP BY b.entregador, ct.cidade_predominante
+        HAVING count(*) >= 5
+        ORDER BY media_h DESC
+        LIMIT 30
+        """,
         params_entregador,
     )
 
@@ -1012,13 +1035,16 @@ def render_logistico():
         st.plotly_chart(fig_entregador, use_container_width=True)
 
         tabela_entregador = df_entregador.rename(columns={
-            "entregador": "Entregador", "base_referencia": "Base", "volume": "Volume",
+            "entregador": "Entregador",
+            "base_referencia": "Base",
+            "cidade": "Cidade",
+            "volume": "Volume",
         })
         tabela_entregador["Tempo Médio"] = df_entregador["media_h"].apply(
             lambda h: fmt_duracao(h * 3600)
         )
         st.dataframe(
-            tabela_entregador[["Entregador", "Base", "Volume", "Tempo Médio"]],
+            tabela_entregador[["Entregador", "Base", "Cidade", "Volume", "Tempo Médio"]],
             use_container_width=True, hide_index=True,
         )
 
