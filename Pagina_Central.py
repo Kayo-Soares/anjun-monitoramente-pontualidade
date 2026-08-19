@@ -615,6 +615,22 @@ def render_logistico():
         )
         st.caption("签收 = 包裹完成/签收的时间。创建 = 订单开立的时间（通常比签收早几个月）。")
 
+        # Aviso destacado com o período de comparação, calculado a partir do
+        # mesmo range escolhido acima (mesma duração, dias imediatamente
+        # anteriores) -- fica visível ainda dentro do bloco de filtros, sem
+        # precisar rolar a tela até os KPIs pra saber contra o que está
+        # comparando.
+        if isinstance(periodo, tuple) and len(periodo) == 2:
+            ini_preview, fim_preview = periodo
+            duracao_preview = (fim_preview - ini_preview).days + 1
+            fim_ant_preview = ini_preview - timedelta(days=1)
+            ini_ant_preview = fim_ant_preview - timedelta(days=duracao_preview - 1)
+            st.info(
+                f"📅 Comparando **{ini_preview:%d/%m/%Y} a {fim_preview:%d/%m/%Y}** "
+                f"({duracao_preview} dia{'s' if duracao_preview > 1 else ''}) "
+                f"contra o período anterior **{ini_ant_preview:%d/%m/%Y} a {fim_ant_preview:%d/%m/%Y}**."
+            )
+
     # -- monta clausulas categoricas (reaproveitadas no periodo atual, anterior e semanal) --
     cat_clauses, params = [], {}
     if f_cliente:
@@ -685,13 +701,7 @@ def render_logistico():
         delta_oc = f"{pct_oc - (kpi_ant['pct_ocorrencia'] or 0.0):+.1f} p.p."
     c4.metric("Pacotes com ocorrência / 问题件占比", f"{pct_oc:.1f}%", delta=delta_oc, delta_color="inverse")
 
-    if tem_periodo_anterior:
-        st.caption(
-            f"↕️ Comparado com o período anterior de mesma duração "
-            f"({ini_ant:%d/%m} a {fim_ant:%d/%m}) · seta verde = melhora, vermelha = piora"
-        )
-        st.caption(f"↕️ 与相同天数的上一周期对比（{ini_ant:%d/%m} 至 {fim_ant:%d/%m}）· 绿色=改善，红色=恶化")
-    else:
+    if not tem_periodo_anterior:
         st.caption("ℹ️ Sem histórico suficiente antes do período selecionado para comparar.")
         st.caption("ℹ️ 所选周期之前没有足够的历史数据可供对比。")
 
