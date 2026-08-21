@@ -660,14 +660,19 @@ def render_logistico():
 
     params["ini"] = ini
     params["fim"] = fim
-    clauses_atual = cat_clauses + [f"{campo_periodo}::date BETWEEN %(ini)s AND %(fim)s"]
+    params["fim_exclusivo"] = fim + timedelta(days=1)
+    # Comparação direta de timestamp (sem ::date) -- o cast em cima da coluna
+    # impedia o Postgres de usar o índice em finalizacao/criacao, forçando
+    # varredura completa da tabela a cada troca de filtro de data.
+    clauses_atual = cat_clauses + [f"{campo_periodo} >= %(ini)s", f"{campo_periodo} < %(fim_exclusivo)s"]
 
     duracao_dias = (fim - ini).days + 1
     fim_ant = ini - timedelta(days=1)
     ini_ant = fim_ant - timedelta(days=duracao_dias - 1)
     params["ini_ant"] = ini_ant
     params["fim_ant"] = fim_ant
-    clauses_ant = cat_clauses + [f"{campo_periodo}::date BETWEEN %(ini_ant)s AND %(fim_ant)s"]
+    params["fim_ant_exclusivo"] = fim_ant + timedelta(days=1)
+    clauses_ant = cat_clauses + [f"{campo_periodo} >= %(ini_ant)s", f"{campo_periodo} < %(fim_ant_exclusivo)s"]
 
     kpi_atual = query_kpis(clauses_atual, params)
     if kpi_atual is None or not kpi_atual["pacotes"]:
@@ -1208,9 +1213,10 @@ with tab_painel:
         params["supervisor"] = supervisor_sel
     if periodo_fin is not None and isinstance(periodo_fin, tuple) and len(periodo_fin) == 2:
         ini_fin, fim_fin = periodo_fin
-        where_clauses.append("finalizacao::date BETWEEN %(ini_fin)s AND %(fim_fin)s")
+        where_clauses.append("finalizacao >= %(ini_fin)s AND finalizacao < %(fim_fin_exclusivo)s")
         params["ini_fin"] = ini_fin
         params["fim_fin"] = fim_fin
+        params["fim_fin_exclusivo"] = fim_fin + timedelta(days=1)
     where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     kpi = run_query(
